@@ -9,7 +9,8 @@
   <script>
 
     $(function() {
-      $('#upload-file-btn').click(function() {
+      $('#upload-file').submit(function(e) {
+        e.preventDefault();
         //alert('OK to continue');
         var form_data = new FormData($('#upload-file')[0]);
         $.ajax({
@@ -87,10 +88,8 @@
     <form id="upload-file" method="post" enctype="multipart/form-data">
         <fieldset>
             <label for="file">Select an Image</label>
-            <input name="file"   type="file"
-                name="img" id="img" onchange="encodeImgtoBase64(this)"
-            >
-            <button id="upload-file-btn" align="center" type="button" style="border:white 2px solid; border-radius:5px; padding:4px">Upload</button>
+            <input name="file" type="file" id="img" accept="image/png, image/jpeg" onchange="encodeImgtoBase64(this)">
+            <input id="upload-file-btn" align="center" type="submit" style="border:white 2px solid; border-radius:5px; padding:4px">
 
         </fieldset>
         <br>
