@@ -1,61 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Home Page</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Home Page</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-       <script  src="https://code.jquery.com/jquery-3.4.1.js"></script>
-       <script>
+  <script  src="https://code.jquery.com/jquery-3.4.1.js"></script>
+  <script>
 
-            $(function() {
-                $('#upload-file-btn').click(function() {
-                    alert('OK to continue');
-                    var form_data = new FormData($('#upload-file')[0]);
-                    $.ajax({
-                        type: 'POST',
-                        url: "/analyse/",
-                        data: form_data,
-                        contentType: false,
-                        cache: false,
-                        processData: false,
-                        success: function(data) {
-                            console.log(data);
-                            datas=data.data;
-                            tone=data.sentiment;
-                            console.log(tone);
-                            $("#ocr").text(datas);
-                            $("#sentiment").text(tone);
-
-                      }
-
-                    });
-                });
-
-
-            });
+    $(function() {
+      $('#upload-file-btn').click(function() {
+        //alert('OK to continue');
+        var form_data = new FormData($('#upload-file')[0]);
+        $.ajax({
+          type: 'POST',
+          url: "/analyse/",
+          data: form_data,
+          contentType: false,
+          cache: false,
+          processData: false,
+          success: function(data) {
+            console.log(data);
+            datas=data.data;
+            tone=data.sentiment;
+            //console.log(tone);
+            $("#ocr").text(datas);
+            $("#sentiment").text(tone);
+          }
+        });
+      });
+    });
 
 
 
 
-        function encodeImgtoBase64(element) {
+    function encodeImgtoBase64(element) {
 
-                var img = element.files[0];
-                var reader = new FileReader();
+      var img = element.files[0];
+      var reader = new FileReader();
 
-                reader.onloadend = function() {
+      reader.onloadend = function() {
+        $("#displayImg").attr("src", reader.result);
+      }
+      reader.readAsDataURL(img);
 
-                      $("#displayImg").attr("src", reader.result);
-                }
-                reader.readAsDataURL(img);
-
-         }
-
+    }
 
 
-    </script>
 
-    <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
+  </script>
+
+  <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
 
 
 
