@@ -20,7 +20,7 @@ except json.JSONDecodeError:
     sys.exit(1)
 
 # Connect to the MongoDB server hosted on MongoDB Atlas
-client = MongoClient('mongodb+srv://dms310:Dhanu3003@cluster0.5jbvjg8.mongodb.net/?retryWrites=true&w=majority', tlsCAFile=certifi.where())
+client = MongoClient('mongodb+srv://dms310:**@cluster0.5jbvjg8.mongodb.net/?retryWrites=true&w=majority', tlsCAFile=certifi.where())
 
 # Select the database and collection
 db = client['Sentiment_Analysis_db']
@@ -31,4 +31,14 @@ result = collection.insert_one(data)
 
 # Print the ID of the newly inserted document
 print(f"Inserted document with ID: {result.inserted_id}")
+
+# Retrieve all documents from the collection
+documents = collection.find()
+
+# Loop through the documents and print them
+for document in documents:
+    print(document)
+
+# Close the connection to the MongoDB server
+client.close()
 
