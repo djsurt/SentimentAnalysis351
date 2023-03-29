@@ -4,7 +4,7 @@ itsdangerous==1.1.0
 Jinja2==2.10.1
 MarkupSafe==1.1.1
 Werkzeug==0.15.5
-numpy>=1.9.2
+numpy>=1.9.2,<1.20.0
 Cython>=0.28.5
 scikit-learn==0.22.2.post1
 pandas>=0.19
@@ -12,3 +12,4 @@ FLASK-CORS == 3.0.8
 nltk>=3.4.5
 JOBLIB==0.15.0
 easy-ocr==0.1
+textblob

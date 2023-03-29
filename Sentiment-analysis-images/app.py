@@ -30,8 +30,8 @@ ext_data=[]
 REPLACE_NO_SPACE = re.compile("[.;:!\'?,\"()\[\]]")
 REPLACE_WITH_SPACE = re.compile("(<br\s*/><br\s*/>)|(\-)|(\/)")
 
-classifier=joblib.load('Models1/Sentiment-Model.pkl')
-vectorizer=joblib.load('Models1/Vectorizer.pkl')
+classifier=joblib.load('Sentiment-analysis-images/Models1/Sentiment-Model.pkl')
+vectorizer=joblib.load('Sentiment-analysis-images/Models1/Vectorizer.pkl')
 
 
 @app.route("/")
