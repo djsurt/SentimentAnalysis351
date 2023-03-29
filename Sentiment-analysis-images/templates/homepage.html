@@ -8,8 +8,8 @@
        <script  src="https://code.jquery.com/jquery-3.4.1.js"></script>
        <script>
 
-              $(function() {
-            $('#upload-file-btn').click(function() {
+            $(function() {
+                $('#upload-file-btn').click(function() {
                     alert('OK to continue');
                     var form_data = new FormData($('#upload-file')[0]);
                     $.ajax({
@@ -24,8 +24,8 @@
                             datas=data.data;
                             tone=data.sentiment;
                             console.log(tone);
-                            $("#ocr").append(datas);
-                            $("#sentiment").append(tone);
+                            $("#ocr").text(datas);
+                            $("#sentiment").text(tone);
 
                       }
 
@@ -95,7 +95,7 @@
             <input name="file"   type="file"
                 name="img" id="img" onchange="encodeImgtoBase64(this)"
             >
-            <button id="upload-file-btn" align="center" type="button">Upload</button>
+            <button id="upload-file-btn" align="center" type="button" style="border:white 2px solid; border-radius:5px; padding:4px">Upload</button>
 
         </fieldset>
         <br>
