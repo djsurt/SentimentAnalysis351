@@ -8,31 +8,18 @@
   <script  src="https://code.jquery.com/jquery-3.4.1.js"></script>
   <script>
 
-    $(function() {
-      $('#upload-file').submit(function(e) {
-        e.preventDefault();
-        //alert('OK to continue');
-        var form_data = new FormData($('#upload-file')[0]);
-        $.ajax({
-          type: 'POST',
-          url: "/analyse/",
-          data: form_data,
-          contentType: false,
-          cache: false,
-          processData: false,
-          success: function(data) {
-            console.log(data);
-            datas=data.data;
-            tone=data.sentiment;
-            //console.log(tone);
-            $("#ocr").text(datas);
-            $("#sentiment").text(tone);
-          }
-        });
+    async function handleSubmit(e) {
+      e.preventDefault();
+      const response = await fetch(e.target.action, {
+        method: 'POST',
+        body: new FormData(e.target)
       });
-    });
-
-
+      const data = response.json();
+      datas=data.data;
+      tone=data.sentiment;
+      $("#ocr").text(datas);
+      $("#sentiment").text(tone);
+    }
 
 
     function encodeImgtoBase64(element) {
@@ -85,11 +72,11 @@
 <section class="text-gray-500 bg-gray-900 body-font">
     <br><br>
     <div align="center">
-    <form id="upload-file" method="post" enctype="multipart/form-data">
+    <form id="upload-file" method="post" enctype="multipart/form-data" action="/analyse/">
         <fieldset>
             <label for="file">Select an Image</label>
             <input name="file" type="file" id="img" accept="image/png, image/jpeg" onchange="encodeImgtoBase64(this)">
-            <input id="upload-file-btn" align="center" type="submit" style="border:white 2px solid; border-radius:5px; padding:4px">
+            <input id="upload-file-btn" align="center" type="submit" style="border:white 2px solid; border-radius:5px; padding:4px; color: #000;">
 
         </fieldset>
         <br>
@@ -146,5 +133,10 @@
     </div>
   </div>
 </section>
+
+<script>
+  document.getElementById('upload-file').addEventListener('submit', handleSubmit);
+</script>
+
 </body>
 </html>
