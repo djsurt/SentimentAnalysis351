@@ -21,6 +21,8 @@ app = dash.Dash(__name__, external_stylesheets=external_css,
 
 conn = psycopg2.connect(host="localhost", database="reddit",
                                         user="postgres", password="abc123")
+# conn = psycopg2.connect(host="csds351.crl8z4r48ftj.us-east-1.rds.amazonaws.com", database="reddit",
+#                                         user="postgres", password="csds351group6")
 
 app.title = 'Real-Time Reddit Monitor'
 
@@ -75,15 +77,15 @@ app.layout = html.Div(
         
         
         html.Div(
-                    dcc.Graph(id="live-graph", animate=False),
-                    className="row",
-                    style={"padding": "20px"}
-                ),
-                html.Div(
-                    dcc.Graph(id="long-live-graph", animate=False),
-                    className="row",
-                    style={"padding": "20px"}
-                ),
+            dcc.Graph(id="live-graph", animate=False),
+            className="row",
+            style={"padding": "20px"}
+        ),
+        html.Div(
+            dcc.Graph(id="long-live-graph", animate=False),
+            className="row",
+            style={"padding": "20px"}
+        ),
         
         html.Div(
             [
@@ -97,9 +99,9 @@ app.layout = html.Div(
         ),
         
         html.Div(
-                    id="recent-threads-table",
-                    className="row",
-                    style={"padding": "20px"}
+            id="recent-threads-table",
+            className="row",
+            style={"padding": "20px"}
         ),
         
         html.Div(
