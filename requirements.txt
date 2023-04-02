@@ -53,6 +53,7 @@ pluggy==0.13.1
 praw==7.1.0
 prawcore==1.4.0
 psycopg2==2.8.5
+psycopg2-binary==2.9.5
 public==2019.4.13
 py==1.9.0
 pycodestyle==2.6.0
