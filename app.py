@@ -161,14 +161,17 @@ def update_output(value1, value2):
 #         line_shape='linear',
 #         mode='lines',
 #         line=dict(width=3.5, color='orange'),
-#         fill='tozeroy', fillcolor='rgba(255, 192, 128, 0.3)',
+#         fill='tozeroy', 
+#         fillcolor='rgba(255, 192, 128, 0.3)',
 #     )
 
-#     layout = go.Layout(xaxis=dict(range=[min(X, default=0), max(X, default=1)]),
-#                         yaxis=dict(range=[-1, 1]),
-#                         title="The average sentiment for {} is {p:5.2f}!".format(searchterm, p=(sum(Y) / len(Y)) if len(Y) != 0 else 0),
-#                         plot_bgcolor='white',
-#                         paper_bgcolor='white')
+#     layout = go.Layout(
+#         xaxis=dict(range=[min(X, default=0), max(X, default=1)]),
+#         yaxis=dict(range=[-1, 1]),
+#         title="The average sentiment for {} is {p:5.2f}!".format(searchterm, p=(sum(Y) / len(Y)) if len(Y) != 0 else 0),
+#         plot_bgcolor='white',
+#         paper_bgcolor='white'
+#     )
 
 #     fig = {'data': [fig], 'layout': layout}
 
@@ -197,14 +200,21 @@ def update_output(value1, value2):
 #     fig = go.Scatter(
 #         x=X,
 #         y=Y,
-#         name='Scatter', line_shape='spline',
-#         fill='tozeroy',  fillcolor='rgba(255, 102, 204, 0.3)', mode='none',
+#         name='Scatter', 
+#         line_shape='spline',
+#         fill='tozeroy',  
+#         fillcolor='rgba(255, 102, 204, 0.3)', 
+#         mode='none',
 #     )
 
-#     return {'data': [fig], 
-#             'layout': go.Layout(xaxis=dict(range=[min(X, default=0), max(X, default=1)]),
-#                                 yaxis=dict(range=[min(Y, default=0), max(Y, default=1)]),
-#                                 title="The long-term average sentiment for {} is {p:5.2f} (20 moving average)!".format(searchterm, p=(sum(Y) / len(Y)) if len(Y) != 0 else 0))}
+#     return {
+#         'data': [fig], 
+#         'layout': go.Layout(
+#             xaxis=dict(range=[min(X, default=0), max(X, default=1)]),
+#             yaxis=dict(range=[min(Y, default=0), max(Y, default=1)]),
+#             title="The long-term average sentiment for {} is {p:5.2f} (20 moving average)!".format(searchterm, p=(sum(Y) / len(Y)) if len(Y) != 0 else 0)
+#         )
+#     }
 
 
 # @app.callback(
@@ -217,17 +227,28 @@ def update_output(value1, value2):
 #                      conn, params=('%' + searchterm + '%',))
 
 #     labels = ['Positive', 'Neutral', 'Negative']
-#     values = [sum(n > 0 for n in df['sentiment']),
-#               sum(n == 0 for n in df['sentiment']), sum(n < 0 for n in df['sentiment'])]
+#     values = [
+#         sum(n > 0 for n in df['sentiment']),
+#         sum(n == 0 for n in df['sentiment']), 
+#         sum(n < 0 for n in df['sentiment'])
+#     ]
 #     colors = ['green', 'gold',  'red']
 
-#     trace = go.Pie(labels=labels, values=values,
-#                    hoverinfo='label+percent', textinfo='value', marker=dict(colors=colors, line=dict(color='#000000', width=2)))
+#     trace = go.Pie(
+#         labels=labels, 
+#         values=values,
+#         hoverinfo='label+percent', 
+#         textinfo='value', 
+#         marker=dict(colors=colors, line=dict(color='#000000', width=2))
+#     )
 
-#     return {"data": [trace], 'layout': go.Layout(
-#         title='Overall Sentiment count for {}!'.format(
-#             searchterm),
-#         showlegend=True)}
+#     return {
+#         "data": [trace], 
+#         'layout': go.Layout(
+#             title='Overall Sentiment count for {}!'.format(searchterm),
+#             showlegend=True
+#         )
+#     }
 
 
 def generate_table(df, max_rows=10):
