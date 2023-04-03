@@ -11,10 +11,8 @@ import psycopg2
 
 
 external_css = ["https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"]
-external_js = ["https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js", "gajs.js"]
 
-
-app = dash.Dash(__name__, external_stylesheets=external_css, external_scripts=external_js)
+app = dash.Dash(__name__, external_stylesheets=external_css)
 
 
 # conn = psycopg2.connect(host="localhost", database="reddit",
