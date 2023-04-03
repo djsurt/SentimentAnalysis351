@@ -1,0 +1,38 @@
+/* Inputs for subreddit and search term
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+
+.input-label {
+    background-color: #f9c7c9; 
+    padding: 10px; 
+    display: flex;
+    min-width: max-content;
+}
+
+.input-field {
+    width: 100%;
+    margin: 0 0 0 5px;
+}
+
+.input-container {
+    display: flex;
+    width: 100%;
+    height: fit-content;
+    flex-direction: row;
+    align-items: center;
+}
+
+.input-header {
+    display: grid;
+    grid-template-columns: 4fr 6fr;
+    column-gap: 20px;
+    padding: 20px;
+    align-items: center;
+    justify-items: center;
+}
+
+/* Graphs
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+
+.graph {
+    padding: 20px;
+}

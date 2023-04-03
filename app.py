@@ -14,8 +14,7 @@ external_css = ["https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstra
 external_js = ["https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js", "gajs.js"]
 
 
-app = dash.Dash(__name__, external_stylesheets=external_css,
-                external_scripts=external_js)
+app = dash.Dash(__name__, external_stylesheets=external_css, external_scripts=external_js)
 
 
 # conn = psycopg2.connect(host="localhost", database="reddit",
@@ -40,40 +39,22 @@ app.layout = html.Div(
                     [
                         html.Span(
                             "Search the term:",
-                            style={
-                                "background-color": "#f9c7c9", 
-                                "padding": "10px",
-                                "display": "flex",
-                                "min-width": "max-content"
-                            }
+                            className="input-label"
                         ),
                         dcc.Input(
                             id="searchinput",
                             type="text",
                             placeholder="Search here",
-                            style={
-                                "margin": "0 0 0 5px"
-                            }
+                            className="input-field"
                         ),
                     ],
-                    style={
-                        "display": "flex",
-                        "width": "100%",
-                        "height": "fit-content",
-                        "flex-direction": "row",
-                        "align-items": "center"
-                    }
+                    className="input-container"
                 ),
                 html.Span(
                     [
                         html.Span(
                             "Select subreddit:",
-                            style={
-                                "background-color": "#f9c7c9", 
-                                "padding": "10px", 
-                                "display": "flex",
-                                "min-width": "max-content"
-                            }
+                            className="input-label"
                         ),
                         dcc.Dropdown(
                             id="subreddit-dropdown",
@@ -83,65 +64,43 @@ app.layout = html.Div(
                                 {"label": "AskReddit", "value": "AskReddit"},
                                 {"label": "Movies", "value": "Movies"},
                             ],
+                            className="input-field",
                             style={
-                                "width": "100%",
-                                "margin": "0 0 0 5px"
+                                "width":"100%"
                             },
                             value="worldnews"
                         )
                     ],
-                    style={
-                        "display": "flex",
-                        "width": "100%",
-                        "height": "fit-content",
-                        "flex-direction": "row",
-                        "align-items": "center"
-                    }
+                    className="input-container"
                 )
             ],
-            className="card mb-4",
-            style={
-                "display": "grid",
-                "grid-template-columns": "4fr 6fr",
-                "column-gap": "20px",
-                "padding": "20px",
-                "align-items": "center",
-                "justify-items": "center"
-            }
+            className="input-header card mb-4"
         ),
         
         dcc.Interval(id="graph-update", interval=1 * 1000, n_intervals=0),
         dcc.Interval(id="pie-graph-update", interval=1 * 1000, n_intervals=0),
         dcc.Interval(id="recent-table-update", interval=2 * 1000, n_intervals=0),
-        
-        
-        html.Div(
-            dcc.Graph(id="live-graph", animate=False),
-            className="row",
-            style={"padding": "20px"}
-        ),
-
-        html.Div(
-            dcc.Graph(id="long-live-graph", animate=False),
-            className="row",
-            style={"padding": "20px"}
-        ),
            
         html.Div(
             [
                 html.Div(
-                    dcc.Graph(id="pie-live-graph", animate=False),
-                    className="col-12 col-md-6 mb-4",
-                    style={"padding": "20px"}
+                    dcc.Graph(id="live-graph", animate=False),
+                    className="col-12 col-md-6 mb-4 graph"
                 ),
+                html.Div(
+                    dcc.Graph(id="long-live-graph", animate=False),
+                    className="col-12 col-md-6 mb-4 graph"
+                ),
+                html.Div(
+                    dcc.Graph(id="pie-live-graph", animate=False),
+                    className="col-12 col-md-6 mb-4 graph"
+                ),
+                html.Div(
+                    id="recent-threads-table",
+                    className="col-12 col-md-6 mb-4 graph"
+                )
             ],
-            className="row",
-        ),
-        
-        html.Div(
-            id="recent-threads-table",
-            className="row",
-            style={"padding": "20px"}
+            className="row"
         ),
         
         html.Div(
