@@ -249,7 +249,7 @@ def update_pie_graph(n_intervals, searchterm):
 
 
 def generate_table(df, max_rows=10):
-    return html.H4(
+    return html.Span(
         children=[
             html.H2(children=["Latest 10 feeds"], style={'textAlign': 'center'}), 
             html.Table(
