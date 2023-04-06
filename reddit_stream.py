@@ -43,8 +43,7 @@ class listener():
                 time = datetime.datetime.now()
                 values = (submission, vs, time)
 
-                conn = psycopg2.connect(host="localhost", database="reddit",
-                                        user="postgres", password="abc123")
+                conn = psycopg2.connect(host="csds351.crl8z4r48ftj.us-east-1.rds.amazonaws.com", database="reddit", user="postgres", password="csds351group6")
                 cur = conn.cursor()
                 cur.execute(
                     'INSERT INTO threads (thread,sentiment,time) VALUES (%s,%s,%s)', values)
@@ -85,8 +84,7 @@ class listener():
         one_day = 86400 * 1000
         del_to = int(current_ms_time - (HM_DAYS_KEEP*one_day))
 
-        conn = psycopg2.connect(host="localhost", database="reddit",
-                                        user="postgres", password="abc123")
+        conn = psycopg2.connect(host="csds351.crl8z4r48ftj.us-east-1.rds.amazonaws.com", database="reddit", user="postgres", password="csds351group6")
         cur = conn.cursor()
 
         cur.execute("DELETE FROM threads WHERE time < {}".format(del_to))
@@ -101,8 +99,7 @@ class listener():
         conn.commit()
 
 
-conn = psycopg2.connect(host="localhost", database="reddit",
-                                        user="postgres", password="abc123")
+conn = psycopg2.connect(host="csds351.crl8z4r48ftj.us-east-1.rds.amazonaws.com", database="reddit", user="postgres", password="csds351group6")
 cur = conn.cursor()
 cur.execute('''CREATE TABLE IF NOT EXISTS threads
              (id SERIAL PRIMARY KEY,thread text, sentiment real, time timestamp)''')
