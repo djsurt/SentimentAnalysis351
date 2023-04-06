@@ -8,14 +8,16 @@ import plotly.graph_objs as go
 import pandas as pd
 import requests
 import psycopg2
-
+import configparser
 
 external_css = ["https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"]
 
 app = dash.Dash(__name__, external_stylesheets=external_css)
 
-conn = psycopg2.connect(host="csds351.crl8z4r48ftj.us-east-1.rds.amazonaws.com", database="reddit",
-                                        user="postgres", password="csds351group6")
+config = configparser.ConfigParser()
+config.read('postgres.ini')
+conn = psycopg2.connect(host=config['DEFAULT']['POSTGRES_HOST'], database="reddit",
+                                        user="postgres", password=config['DEFAULT']['POSTGRES_PASSWORD'])
 
 app.title = 'Real-Time Reddit Monitor'
 
@@ -40,7 +42,8 @@ app.layout = html.Div(
                             id="searchinput",
                             type="text",
                             placeholder="Search here",
-                            className="input-field"
+                            className="input-field",
+                            value=""
                         ),
                     ],
                     className="input-container"

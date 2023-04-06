@@ -3,8 +3,12 @@ Run as a cronjob to keep database size under control
 '''
 import time
 import psycopg2
+import configparser
 
-conn = psycopg2.connect(host="csds351.crl8z4r48ftj.us-east-1.rds.amazonaws.com", database="reddit", user="postgres", password="csds351group6")
+config = configparser.ConfigParser()
+config.read('postgres.ini')
+conn = psycopg2.connect(host=config['DEFAULT']['POSTGRES_HOST'], database="reddit",
+                                        user="postgres", password=config['DEFAULT']['POSTGRES_PASSWORD'])
 c = conn.cursor()
 
 HM_DAYS_KEEP = 30

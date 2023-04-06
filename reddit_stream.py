@@ -8,6 +8,7 @@ import praw
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import requests
 import psycopg2
+import configparser
 
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)))
 os.chdir(os.path.realpath(os.path.dirname(__file__)))
@@ -43,7 +44,10 @@ class listener():
                 time = datetime.datetime.now()
                 values = (submission, vs, time)
 
-                conn = psycopg2.connect(host="csds351.crl8z4r48ftj.us-east-1.rds.amazonaws.com", database="reddit", user="postgres", password="csds351group6")
+                config = configparser.ConfigParser()
+                config.read('postgres.ini')
+                conn = psycopg2.connect(host=config['DEFAULT']['POSTGRES_HOST'], database="reddit",
+                                                        user="postgres", password=config['DEFAULT']['POSTGRES_PASSWORD'])
                 cur = conn.cursor()
                 cur.execute(
                     'INSERT INTO threads (thread,sentiment,time) VALUES (%s,%s,%s)', values)
@@ -84,7 +88,10 @@ class listener():
         one_day = 86400 * 1000
         del_to = int(current_ms_time - (HM_DAYS_KEEP*one_day))
 
-        conn = psycopg2.connect(host="csds351.crl8z4r48ftj.us-east-1.rds.amazonaws.com", database="reddit", user="postgres", password="csds351group6")
+        config = configparser.ConfigParser()
+        config.read('postgres.ini')
+        conn = psycopg2.connect(host=config['DEFAULT']['POSTGRES_HOST'], database="reddit",
+                                                user="postgres", password=config['DEFAULT']['POSTGRES_PASSWORD'])
         cur = conn.cursor()
 
         cur.execute("DELETE FROM threads WHERE time < {}".format(del_to))
@@ -99,7 +106,10 @@ class listener():
         conn.commit()
 
 
-conn = psycopg2.connect(host="csds351.crl8z4r48ftj.us-east-1.rds.amazonaws.com", database="reddit", user="postgres", password="csds351group6")
+config = configparser.ConfigParser()
+config.read('postgres.ini')
+conn = psycopg2.connect(host=config['DEFAULT']['POSTGRES_HOST'], database="reddit",
+                                        user="postgres", password=config['DEFAULT']['POSTGRES_PASSWORD'])
 cur = conn.cursor()
 cur.execute('''CREATE TABLE IF NOT EXISTS threads
              (id SERIAL PRIMARY KEY,thread text, sentiment real, time timestamp)''')
