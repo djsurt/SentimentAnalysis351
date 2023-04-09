@@ -24,6 +24,7 @@ app.layout = html.Div(
         ),
         page := html.Div(
             [
+                # Twitter dashboard display
                 twitter_content := html.Div(
                     [
                         html.Div(
@@ -93,6 +94,8 @@ app.layout = html.Div(
                     id="twitter_content",
                     style={"display": "none"}
                 ),
+
+                # Reddit dashboard display
                 reddit_content := html.Div(
                     [
                         html.Div(
