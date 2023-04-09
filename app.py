@@ -1,4 +1,4 @@
-from dash import Dash, html, Input, Output, dcc, ctx, callback
+from dash import Dash, html, Input, Output, dcc, ctx
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
 import pandas as pd
@@ -14,7 +14,7 @@ app.layout = html.Div(
     [
         reddit_button := html.Button(
             "Go to Reddit Analysis Page",
-            style={"margin": "auto", "width": "fit-content"},
+            style={"margin": "auto", "width": "fit-content", "display": "none"},
             id="reddit_button"
         ),
         twitter_button := html.Button(
@@ -221,10 +221,10 @@ app.layout = html.Div(
 '''
 Buttons to switch display
 '''
-@callback(
+@app.callback(
     Output('twitter_content', component_property='style'),
-    Input("twitter_button", component_property="n_clicks"),
-    Input("reddit_button", component_property="n_clicks")
+    [Input("twitter_button", component_property="n_clicks"),
+    Input("reddit_button", component_property="n_clicks")]
 )
 def switchTwitter(click, n_clicks):
     if "twitter_button" == ctx.triggered_id:
@@ -232,16 +232,39 @@ def switchTwitter(click, n_clicks):
     else:
         return {"display": "none"}
     
-@callback(
+@app.callback(
     Output('reddit_content', component_property='style'),
-    Input("twitter_button", component_property="n_clicks"),
-    Input("reddit_button", component_property="n_clicks")
+    [Input("twitter_button", component_property="n_clicks"),
+    Input("reddit_button", component_property="n_clicks")]
 )
 def switchReddit(click, n_clicks):
     if "twitter_button" == ctx.triggered_id:
         return {"display": "none"}
     else:
         return {"display": "block"}
+
+@app.callback(
+    Output('reddit_button', component_property='style'),
+    [Input("twitter_button", component_property="n_clicks"),
+     Input("reddit_button", "n_clicks")]
+)
+def toggleReddit(click, n_clicks):
+    if "twitter_button" == ctx.triggered_id:
+        return {"display": "block"}
+    else:
+        return {"display": "none"}
+
+@app.callback(
+    Output('twitter_button', component_property='style'),
+    [Input("twitter_button", component_property="n_clicks"),
+     Input("reddit_button", "n_clicks")]
+)
+def toggleReddit(click, n_clicks):
+    if "twitter_button" == ctx.triggered_id:
+        return {"display": "none"}
+    else:
+        return {"display": "block"}
+        
 
 
 
@@ -260,7 +283,7 @@ twitter_conn = psycopg2.connect(host=config['DEFAULT']['POSTGRES_HOST'], databas
 '''
 Twitter Callbacks
 '''
-@callback(
+@app.callback(
     Output('twitter_term', 'children'),
     [Input('twitter-dropdown', 'value'), Input("searchinput-twitter", "value")])
 def update_output_twitter(value1, value2):
@@ -272,7 +295,7 @@ def update_output_twitter(value1, value2):
 '''
 Reddit Callbacks
 '''
-@callback(
+@app.callback(
     Output('subreddit_term', 'children'),
     [Input('subreddit-dropdown', 'value'), Input("searchinput", "value")])
 def update_output(value1, value2):
@@ -281,7 +304,7 @@ def update_output(value1, value2):
     return
 
 
-@callback(
+@app.callback(
     Output('live-graph', 'figure'),
     [Input('graph-update', 'n_intervals'), Input('searchinput', 'value')])
 def update_graph(n_intervals, searchterm):
@@ -323,7 +346,7 @@ def update_graph(n_intervals, searchterm):
 
 
 
-@callback(
+@app.callback(
     Output('long-live-graph', 'figure'),
     [Input('graph-update', 'n_intervals'), Input('searchinput', 'value')])
 def update_long_graph(n_intervals, searchterm):
@@ -361,7 +384,7 @@ def update_long_graph(n_intervals, searchterm):
     }
 
 
-@callback(
+@app.callback(
     Output('pie-live-graph', 'figure'),
     [Input('pie-graph-update', 'n_intervals'), Input(component_id='searchinput', component_property='value')])
 def update_pie_graph(n_intervals, searchterm):
@@ -395,7 +418,7 @@ def update_pie_graph(n_intervals, searchterm):
     }
 
 
-@callback(Output('recent-threads-table', 'children'),
+@app.callback(Output('recent-threads-table', 'children'),
             [Input(component_id='searchinput', component_property='value'), Input('recent-table-update', 'n_intervals')])
 def update_recent_threads(searchterm, n_intervals):
     if searchterm:
