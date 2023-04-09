@@ -62,66 +62,23 @@ app.layout = html.Div(
                         html.Div(
                             [
                                 html.H1(
-                                    [
-                                        html.Img(
-                                            src="https://www.redditstatic.com/desktop2x/img/favicon/apple-icon-57x57.png",
-                                            style={"vertical-align": "middle", "margin-right": "10px", "width": "40px"}
-                                        ),
-                                        "Totally Finished Twitter Page!"
-                                    ],
+                                    'Twitter Malicious Posts Detector',
                                     className="card text-white text-center mb-4",
-                                    style={"padding": "20px", "background-color": "#FF4500", "border-radius": "10px"}
+                                    style={"padding": "20px", "background-color": "#1DA1F2", "border-radius": "10px"}
                                 ),
 
                                 html.Div(
                                     [
                                         html.Div(
-                                            [
-                                                html.Span(
-                                                    "Search the term:",
-                                                    className="input-label"
-                                                ),
-                                                dcc.Input(
-                                                    id="searchinput-twitter",
-                                                    type="text",
-                                                    placeholder="Search here",
-                                                    className="input-field",
-                                                    value=""
-                                                ),
-                                            ],
-                                            className="input-container",
-                                            style={"display": "inline-block", "padding-right": "10px"}
-                                        ),
-                                        html.Div(
-                                            [
-                                                html.Span(
-                                                    "Select twitter:",
-                                                    className="input-label"
-                                                ),
-                                                dcc.Dropdown(
-                                                    id="twitter-dropdown",
-                                                    options=[
-                                                        {"label": "All", "value": "all"},
-                                                        {"label": "World News", "value": "worldnews"},
-                                                        {"label": "AskReddit", "value": "AskReddit"},
-                                                        {"label": "Movies", "value": "Movies"},
-                                                    ],
-                                                    className="input-field",
-                                                    style={"width": "100%"},
-                                                    value="AskReddit"
-                                                )
-                                            ],
-                                            className="input-container",
-                                            style={"display": "inline-block", "width": "60%"}
-                                        ),
+                                            generate_twitter_table(twitter_df, max_rows=10),
+                                            className="col-12 mb-4 table-container"
+                                        )
                                     ],
-                                    className="input-header card mb-4",
-                                    style={"border-radius": "10px", "padding": "20px"}
-                                )
+                                    className="row"
+                                ),
                             ],
                             style={"margin": "20px 10%", "padding": "20px"}
-                        ),
-                        html.Div(id="twitter_term"),
+                        )
                     ],
                     id="twitter_content",
                     style={"display": "none"}
@@ -190,9 +147,9 @@ app.layout = html.Div(
                                     style={"border-radius": "10px", "padding": "20px"}
                                 ),
                                 
-                                dcc.Interval(id="graph-update", interval=1 * 1000, n_intervals=0),
-                                dcc.Interval(id="pie-graph-update", interval=1 * 1000, n_intervals=0),
-                                dcc.Interval(id="recent-table-update", interval=2 * 1000, n_intervals=0),
+                                dcc.Interval(id="graph-update", interval=10 * 1000, n_intervals=0),
+                                dcc.Interval(id="pie-graph-update", interval=10 * 1000, n_intervals=0),
+                                dcc.Interval(id="recent-table-update", interval=20 * 1000, n_intervals=0),
                                 
                                 html.Div(
                                     [
@@ -256,7 +213,7 @@ Buttons to switch display
 )
 def switchTwitter(click, n_clicks):
     if "twitter_button" == ctx.triggered_id:
-        return {"display": "block"}
+        return {"display": "contents"}
     else:
         return {"display": "none"}
     
@@ -269,7 +226,7 @@ def switchReddit(click, n_clicks):
     if "twitter_button" == ctx.triggered_id:
         return {"display": "none"}
     else:
-        return {"display": "block"}
+        return {"display": "contents"}
 
 @app.callback(
     Output('reddit_button', component_property='style'),
@@ -308,13 +265,7 @@ twitter_conn = psycopg2.connect(host=config['DEFAULT']['POSTGRES_HOST'], databas
 '''
 Twitter Callbacks
 '''
-@app.callback(
-    Output('twitter_term', 'children'),
-    [Input('twitter-dropdown', 'value'), Input("searchinput-twitter", "value")])
-def update_output_twitter(value1, value2):
-    #listener.subred(value1)
-    #listener.topic(value2)
-    return "value1: " + value1 + " | value2: " + value2
+
 
 # -----------------------------------------------------------------------------------------
 '''
@@ -487,4 +438,4 @@ def generate_table(df, max_rows=10):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)
