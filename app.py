@@ -9,6 +9,39 @@ import configparser
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, './custom-styles.css'])
 app.title = 'Real-Time Reddit Monitor'
 
+def generate_twitter_table(data, max_rows=10):
+    return html.Table(
+        className="table table-responsive table-striped table-bordered table-hover",
+        children=[
+            html.Thead(
+                html.Tr(
+                    children=[
+                        html.Th(col.title()) for col in data.columns.values
+                    ]
+                )
+            ),
+            html.Tbody(
+                [
+                    html.Tr(
+                        children=[
+                            html.Td(data.iloc[i][col]) for col in data.columns.values
+                        ]
+                    )
+                    for i in range(min(len(data), max_rows))
+                ]
+            )
+        ],
+        style={"height": "400px", 'overflowY': 'auto'}
+    )
+
+# Replace the sample data with your actual data
+sample_twitter_data = {
+    'Time': ['2023-04-09 14:30:00', '2023-04-09 14:20:00', '2023-04-09 14:10:00'],
+    'Tweet': ['This is a malicious tweet.', 'This is a normal tweet.', 'Another malicious tweet found.'],
+    'Malicious': [True, False, True]
+}
+twitter_df = pd.DataFrame(sample_twitter_data)
+
 app.layout = html.Div(
     [
         reddit_button := html.Button(
