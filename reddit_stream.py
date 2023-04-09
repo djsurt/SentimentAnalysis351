@@ -26,7 +26,7 @@ class listener():
     def topic(self, text=""):
         return text
 
-    def subred(self, text='worldnews'):
+    def subred(self, text='AskReddit'):
         subreddit = reddit.subreddit(text)
         return subreddit
 
@@ -34,7 +34,7 @@ class listener():
 
         #subreddit = self.subred()
         #track = self.topic()
-        subreddit = reddit.subreddit('worldnews')
+        subreddit = reddit.subreddit('AskReddit')
 
         for submis in subreddit.stream.submissions():
             try:

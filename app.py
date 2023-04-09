@@ -1,6 +1,7 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 import os
 import sqlite3
@@ -12,7 +13,7 @@ import configparser
 
 external_css = ["https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"]
 
-app = dash.Dash(__name__, external_stylesheets=external_css)
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, './custom-styles.css'])
 
 config = configparser.ConfigParser()
 config.read('postgres.ini')
@@ -25,14 +26,20 @@ app.title = 'Real-Time Reddit Monitor'
 app.layout = html.Div(
     [
         html.H1(
-            "Real Time Sentiment Analysis on Current World News!",
-            className="card bg-light text-dark text-center mb-4",
-            style={"padding": "20px"}
+            [
+                html.Img(
+                    src="https://www.redditstatic.com/desktop2x/img/favicon/apple-icon-57x57.png",
+                    style={"vertical-align": "middle", "margin-right": "10px", "width": "40px"}
+                ),
+                "Real Time Sentiment Analysis on Various Subreddits!"
+            ],
+            className="card text-white text-center mb-4",
+            style={"padding": "20px", "background-color": "#FF4500", "border-radius": "10px"}
         ),
 
         html.Div(
             [
-                html.Span(
+                html.Div(
                     [
                         html.Span(
                             "Search the term:",
@@ -46,9 +53,10 @@ app.layout = html.Div(
                             value=""
                         ),
                     ],
-                    className="input-container"
+                    className="input-container",
+                    style={"display": "inline-block", "padding-right": "10px"}
                 ),
-                html.Span(
+                html.Div(
                     [
                         html.Span(
                             "Select subreddit:",
@@ -63,16 +71,16 @@ app.layout = html.Div(
                                 {"label": "Movies", "value": "Movies"},
                             ],
                             className="input-field",
-                            style={
-                                "width":"100%"
-                            },
-                            value="worldnews"
+                            style={"width": "100%"},
+                            value="AskReddit"
                         )
                     ],
-                    className="input-container"
-                )
+                    className="input-container",
+                    style={"display": "inline-block", "width": "60%"}
+                ),
             ],
-            className="input-header card mb-4"
+            className="input-header card mb-4",
+            style={"border-radius": "10px", "padding": "20px"}
         ),
         
         dcc.Interval(id="graph-update", interval=1 * 1000, n_intervals=0),
