@@ -42,18 +42,19 @@ app.layout = html.Div([
     [Input('upload-data', 'contents')],
     [State('upload-data', 'filename')]
 )
+
 def update_output(contents, filename):
     if contents:
         content_type, content_string = ''.join(contents).split(',')
         decoded = base64.b64decode(content_string)
         try:
             df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-            df['text_vectorized'] = vectorizer.transform(df['Comment'])
-            df['prediction'] = classifier.predict(df['text_vectorized'])
+            text_vectorized = vectorizer.transform(df['Comment'])
+            df['prediction'] = classifier.predict(text_vectorized)
             malicious_tweets = df[df['prediction'] == 1]
 
             return html.Div([
-                html.H5("Detected Malicious Tweets in {filename}".format(filename)),
+                html.H5(f"Detected Malicious Tweets in {filename}"),
                 dash_table.DataTable(
                     id='malicious-tweets-table',
                     columns=[{"name": i, "id": i} for i in malicious_tweets.columns],
@@ -67,6 +68,7 @@ def update_output(contents, filename):
                 'There was an error processing this file.'
             ])
     return html.Div([])
+
 
 
 if __name__ == '__main__':
