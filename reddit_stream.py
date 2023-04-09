@@ -1,12 +1,9 @@
 import datetime
 import os
-import sqlite3
 import sys
 import time
-import pandas as pd
 import praw
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-import requests
 import psycopg2
 import configparser
 
