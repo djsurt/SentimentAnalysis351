@@ -5,7 +5,6 @@ import pandas as pd
 import psycopg2
 import configparser
 
-external_css = ["https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"]
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, './custom-styles.css'])
 app.title = 'Real-Time Reddit Monitor'
@@ -199,11 +198,7 @@ app.layout = html.Div(
                                     ],
                                     className="card mb-4",
                                     style={"padding": "20px"}
-                                ),
-                                
-                                html.Hr(),
-                                html.Div(id="subreddit_term"),
-                                html.Div(id="search_term"),
+                                )
                                 
                             ],
                             style={"margin": "20px 10%", "padding": "20px"}
@@ -259,14 +254,11 @@ def toggleReddit(click, n_clicks):
     [Input("twitter_button", component_property="n_clicks"),
      Input("reddit_button", "n_clicks")]
 )
-def toggleReddit(click, n_clicks):
+def toggleTwitter(click, n_clicks):
     if "twitter_button" == ctx.triggered_id:
         return {"display": "none"}
     else:
         return {"display": "block"}
-        
-
-
 
 server = app.server
 
@@ -295,15 +287,6 @@ def update_output_twitter(value1, value2):
 '''
 Reddit Callbacks
 '''
-@app.callback(
-    Output('subreddit_term', 'children'),
-    [Input('subreddit-dropdown', 'value'), Input("searchinput", "value")])
-def update_output(value1, value2):
-    #listener.subred(value1)
-    #listener.topic(value2)
-    return
-
-
 @app.callback(
     Output('live-graph', 'figure'),
     [Input('graph-update', 'n_intervals'), Input('searchinput', 'value')])
@@ -471,4 +454,4 @@ def generate_table(df, max_rows=10):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=True)
