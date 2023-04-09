@@ -1,15 +1,14 @@
-from dash import Dash, html, Input, Output, ctx
+from dash import Dash, html, Input, Output, dcc, ctx, callback
 import dash_bootstrap_components as dbc
-from dash.dependencies import Input, Output
-from reddit import redditUI
-from twitter import twitterUI
+import plotly.graph_objs as go
+import pandas as pd
+import psycopg2
+import configparser
 
 external_css = ["https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"]
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, './custom-styles.css'])
-
 app.title = 'Real-Time Reddit Monitor'
-
 
 app.layout = html.Div(
     [
@@ -24,22 +23,426 @@ app.layout = html.Div(
             id="twitter_button"
         ),
         page := html.Div(
+            [
+                twitter_content := html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.H1(
+                                    [
+                                        html.Img(
+                                            src="https://www.redditstatic.com/desktop2x/img/favicon/apple-icon-57x57.png",
+                                            style={"vertical-align": "middle", "margin-right": "10px", "width": "40px"}
+                                        ),
+                                        "Totally Finished Twitter Page!"
+                                    ],
+                                    className="card text-white text-center mb-4",
+                                    style={"padding": "20px", "background-color": "#FF4500", "border-radius": "10px"}
+                                ),
+
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Span(
+                                                    "Search the term:",
+                                                    className="input-label"
+                                                ),
+                                                dcc.Input(
+                                                    id="searchinput-twitter",
+                                                    type="text",
+                                                    placeholder="Search here",
+                                                    className="input-field",
+                                                    value=""
+                                                ),
+                                            ],
+                                            className="input-container",
+                                            style={"display": "inline-block", "padding-right": "10px"}
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Span(
+                                                    "Select twitter:",
+                                                    className="input-label"
+                                                ),
+                                                dcc.Dropdown(
+                                                    id="twitter-dropdown",
+                                                    options=[
+                                                        {"label": "All", "value": "all"},
+                                                        {"label": "World News", "value": "worldnews"},
+                                                        {"label": "AskReddit", "value": "AskReddit"},
+                                                        {"label": "Movies", "value": "Movies"},
+                                                    ],
+                                                    className="input-field",
+                                                    style={"width": "100%"},
+                                                    value="AskReddit"
+                                                )
+                                            ],
+                                            className="input-container",
+                                            style={"display": "inline-block", "width": "60%"}
+                                        ),
+                                    ],
+                                    className="input-header card mb-4",
+                                    style={"border-radius": "10px", "padding": "20px"}
+                                )
+                            ],
+                            style={"margin": "20px 10%", "padding": "20px"}
+                        ),
+                        html.Div(id="twitter_term"),
+                    ],
+                    id="twitter_content",
+                    style={"display": "none"}
+                ),
+                reddit_content := html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.H1(
+                                    [
+                                        html.Img(
+                                            src="https://www.redditstatic.com/desktop2x/img/favicon/apple-icon-57x57.png",
+                                            style={"vertical-align": "middle", "margin-right": "10px", "width": "40px"}
+                                        ),
+                                        "Real Time Sentiment Analysis on Various Subreddits!"
+                                    ],
+                                    className="card text-white text-center mb-4",
+                                    style={"padding": "20px", "background-color": "#FF4500", "border-radius": "10px"}
+                                ),
+
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Span(
+                                                    "Search the term:",
+                                                    className="input-label"
+                                                ),
+                                                dcc.Input(
+                                                    id="searchinput",
+                                                    type="text",
+                                                    placeholder="Search here",
+                                                    className="input-field",
+                                                    value=""
+                                                ),
+                                            ],
+                                            className="input-container",
+                                            style={"display": "inline-block", "padding-right": "10px"}
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Span(
+                                                    "Select subreddit:",
+                                                    className="input-label"
+                                                ),
+                                                dcc.Dropdown(
+                                                    id="subreddit-dropdown",
+                                                    options=[
+                                                        {"label": "All", "value": "all"},
+                                                        {"label": "World News", "value": "worldnews"},
+                                                        {"label": "AskReddit", "value": "AskReddit"},
+                                                        {"label": "Movies", "value": "Movies"},
+                                                    ],
+                                                    className="input-field",
+                                                    style={"width": "100%"},
+                                                    value="AskReddit"
+                                                )
+                                            ],
+                                            className="input-container",
+                                            style={"display": "inline-block", "width": "60%"}
+                                        ),
+                                    ],
+                                    className="input-header card mb-4",
+                                    style={"border-radius": "10px", "padding": "20px"}
+                                ),
+                                
+                                dcc.Interval(id="graph-update", interval=1 * 1000, n_intervals=0),
+                                dcc.Interval(id="pie-graph-update", interval=1 * 1000, n_intervals=0),
+                                dcc.Interval(id="recent-table-update", interval=2 * 1000, n_intervals=0),
+                                
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            dcc.Graph(id="live-graph", animate=False),
+                                            className="col-12 col-md-6 mb-4 graph"
+                                        ),
+                                        html.Div(
+                                            dcc.Graph(id="long-live-graph", animate=False),
+                                            className="col-12 col-md-6 mb-4 graph"
+                                        ),
+                                        html.Div(
+                                            dcc.Graph(id="pie-live-graph", animate=False),
+                                            className="col-12 col-md-6 mb-4 graph"
+                                        ),
+                                        html.Div(
+                                            id="recent-threads-table",
+                                            className="col-12 col-md-6 mb-4 graph"
+                                        )
+                                    ],
+                                    className="row"
+                                ),
+                                
+                                html.Div(
+                                    [
+                                        html.H2(
+                                            "By: Isha Das, Ben Flock, Dhananjay Surti, Zach Youssef",
+                                            className="card-header text-white text-center",
+                                            style={"background-color": "#929292"}
+                                        ),
+                                        html.H3(
+                                            "CSDS 351: Group 6",
+                                            className="card-body text-center",
+                                            style={"background-color": "#e3dede", "padding": "20px"}
+                                        ),
+                                    ],
+                                    className="card mb-4",
+                                    style={"padding": "20px"}
+                                ),
+                                
+                                html.Hr(),
+                                html.Div(id="subreddit_term"),
+                                html.Div(id="search_term"),
+                                
+                            ],
+                            style={"margin": "20px 10%", "padding": "20px"}
+                        )
+                    ],
+                    id="reddit_content",
+                    style={"display": "none"}
+                )
+            ],
             id="page"
         )
     ],
 )
 
-@app.callback(
-    Output('page', component_property='children'),
+'''
+Buttons to switch display
+'''
+@callback(
+    Output('twitter_content', component_property='style'),
     Input("twitter_button", component_property="n_clicks"),
     Input("reddit_button", component_property="n_clicks")
 )
-def switchDisplay(click, idkArgTwo):
+def switchTwitter(click, n_clicks):
     if "twitter_button" == ctx.triggered_id:
-        return twitterUI(app)
+        return {"display": "block"}
     else:
-        return redditUI(app)
+        return {"display": "none"}
+    
+@callback(
+    Output('reddit_content', component_property='style'),
+    Input("twitter_button", component_property="n_clicks"),
+    Input("reddit_button", component_property="n_clicks")
+)
+def switchReddit(click, n_clicks):
+    if "twitter_button" == ctx.triggered_id:
+        return {"display": "none"}
+    else:
+        return {"display": "block"}
+
+
 
 server = app.server
+
+config = configparser.ConfigParser()
+config.read('postgres.ini')
+conn = psycopg2.connect(host=config['DEFAULT']['POSTGRES_HOST'], database="reddit",
+                                        user="postgres", password=config['DEFAULT']['POSTGRES_PASSWORD'])
+config = configparser.ConfigParser()
+config.read('postgres.ini')
+twitter_conn = psycopg2.connect(host=config['DEFAULT']['POSTGRES_HOST'], database="reddit",
+                                        user="postgres", password=config['DEFAULT']['POSTGRES_PASSWORD'])
+
+# -----------------------------------------------------------------------------------------
+'''
+Twitter Callbacks
+'''
+@callback(
+    Output('twitter_term', 'children'),
+    [Input('twitter-dropdown', 'value'), Input("searchinput-twitter", "value")])
+def update_output_twitter(value1, value2):
+    #listener.subred(value1)
+    #listener.topic(value2)
+    return "value1: " + value1 + " | value2: " + value2
+
+# -----------------------------------------------------------------------------------------
+'''
+Reddit Callbacks
+'''
+@callback(
+    Output('subreddit_term', 'children'),
+    [Input('subreddit-dropdown', 'value'), Input("searchinput", "value")])
+def update_output(value1, value2):
+    #listener.subred(value1)
+    #listener.topic(value2)
+    return
+
+
+@callback(
+    Output('live-graph', 'figure'),
+    [Input('graph-update', 'n_intervals'), Input('searchinput', 'value')])
+def update_graph(n_intervals, searchterm):
+
+    searchterm = searchterm.lower()
+
+    conn.cursor()
+    df = pd.read_sql("SELECT * FROM threads WHERE thread LIKE %s ORDER BY time DESC LIMIT 50",
+                    conn, params=('%' + searchterm + '%',))
+    df.sort_values('time', inplace=True)
+    df['time'] = pd.to_datetime(df['time'])
+    df.dropna(inplace=True)
+
+    X = df['time'].tail(100)
+    Y = df.sentiment.values[-100:]
+
+    fig = go.Scatter(
+        x=X,
+        y=Y,
+        name='Scatter',
+        line_shape='linear',
+        mode='lines',
+        line=dict(width=3.5, color='orange'),
+        fill='tozeroy', 
+        fillcolor='rgba(255, 192, 128, 0.3)',
+    )
+
+    layout = go.Layout(
+        xaxis=dict(range=[min(X, default=0), max(X, default=1)]),
+        yaxis=dict(range=[-1, 1]),
+        title="The average sentiment for {} is {p:5.2f}!".format(searchterm, p=(sum(Y) / len(Y)) if len(Y) != 0 else 0),
+        plot_bgcolor='white',
+        paper_bgcolor='white'
+    )
+
+    fig = {'data': [fig], 'layout': layout}
+
+    return fig
+
+
+
+@callback(
+    Output('long-live-graph', 'figure'),
+    [Input('graph-update', 'n_intervals'), Input('searchinput', 'value')])
+def update_long_graph(n_intervals, searchterm):
+
+    searchterm = searchterm.lower()
+
+    conn.cursor()
+    df = pd.read_sql("SELECT * FROM threads WHERE thread LIKE %s ORDER BY time DESC",
+                    conn, params=('%' + searchterm + '%',))
+    df.sort_values('time', inplace=True)
+    df['time'] = pd.to_datetime(df['time'])
+    df['sentiment_smoothed'] = df['sentiment'].rolling(int(len(df)/20)).mean()
+    df.dropna(inplace=True)
+
+    X = df['time']
+    Y = df.sentiment_smoothed.values[:]
+
+    fig = go.Scatter(
+        x=X,
+        y=Y,
+        name='Scatter', 
+        line_shape='spline',
+        fill='tozeroy',  
+        fillcolor='rgba(255, 102, 204, 0.3)', 
+        mode='none',
+    )
+
+    return {
+        'data': [fig], 
+        'layout': go.Layout(
+            xaxis=dict(range=[min(X, default=0), max(X, default=1)]),
+            yaxis=dict(range=[min(Y, default=0), max(Y, default=1)]),
+            title="The long-term average sentiment for {} is {p:5.2f} (20 moving average)!".format(searchterm, p=(sum(Y) / len(Y)) if len(Y) != 0 else 0)
+        )
+    }
+
+
+@callback(
+    Output('pie-live-graph', 'figure'),
+    [Input('pie-graph-update', 'n_intervals'), Input(component_id='searchinput', component_property='value')])
+def update_pie_graph(n_intervals, searchterm):
+
+    conn.cursor()
+    df = pd.read_sql("SELECT * FROM threads WHERE thread LIKE %s",
+                    conn, params=('%' + searchterm + '%',))
+
+    labels = ['Positive', 'Neutral', 'Negative']
+    values = [
+        sum(n > 0 for n in df['sentiment']),
+        sum(n == 0 for n in df['sentiment']), 
+        sum(n < 0 for n in df['sentiment'])
+    ]
+    colors = ['green', 'gold',  'red']
+
+    trace = go.Pie(
+        labels=labels, 
+        values=values,
+        hoverinfo='label+percent', 
+        textinfo='value', 
+        marker=dict(colors=colors, line=dict(color='#000000', width=2))
+    )
+
+    return {
+        "data": [trace], 
+        'layout': go.Layout(
+            title='Overall Sentiment count for {}!'.format(searchterm),
+            showlegend=True
+        )
+    }
+
+
+@callback(Output('recent-threads-table', 'children'),
+            [Input(component_id='searchinput', component_property='value'), Input('recent-table-update', 'n_intervals')])
+def update_recent_threads(searchterm, n_intervals):
+    if searchterm:
+        df = pd.read_sql("SELECT * FROM threads WHERE thread LIKE %s ORDER BY time DESC LIMIT 10",
+                        conn, params=('%' + searchterm + '%',))
+    else:
+        df = pd.read_sql(
+            "SELECT * FROM threads ORDER BY time DESC LIMIT 10", conn)
+
+    #df['Time'] = pd.to_datetime(df['time'])
+    df['Time'] = pd.to_datetime(df['time']).dt.strftime('%Y/%m/%d %H:%M:%S')
+    df.dropna(inplace=True)
+
+    df['Live Feed'] = df['thread'].str[:]
+    df = df[['Time', 'Live Feed', 'sentiment']]
+
+    return generate_table(df, max_rows=10)
+
+# -----------------------------------------------------------------------------------------
+
+def generate_table(df, max_rows=10):
+    return html.Span(
+        children=[
+            html.H2(children=["Latest 10 feeds"], style={'textAlign': 'center'}), 
+            html.Table(
+                className="table table-responsive table-striped table-bordered table-hover",
+                children=[
+                    html.Thead(
+                        html.Tr(
+                            children=[
+                                html.Th(col.title()) for col in df.columns.values
+                            ]
+                        )
+                    ),
+                    html.Tbody(
+                        [
+                            html.Tr(
+                                children=[
+                                    html.Td(data) for data in d
+                                ]
+                            )
+                            for d in df.values.tolist()
+                        ]
+                    )
+                ], 
+                style={"height": "400px", 'overflowY': 'auto'}
+            )
+        ]
+    )
+
+
 if __name__ == '__main__':
     app.run_server(debug=False)
