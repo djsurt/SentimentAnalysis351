@@ -6,6 +6,7 @@ import praw
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import psycopg2
 import configparser
+import threading
 
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)))
 os.chdir(os.path.realpath(os.path.dirname(__file__)))
@@ -23,15 +24,13 @@ class listener():
     def topic(self, text=""):
         return text
 
-    def subred(self, text='AskReddit'):
+    def subred(self, text):
         subreddit = reddit.subreddit(text)
         return subreddit
 
-    def save_in_db(self):
-
-        #subreddit = self.subred()
-        #track = self.topic()
-        subreddit = reddit.subreddit('AskReddit')
+    def save_in_db(self, text):
+        subreddit = self.subred(text=text)
+        # subreddit = reddit.subreddit('AskReddit')
 
         for submis in subreddit.stream.submissions():
             try:
@@ -39,7 +38,7 @@ class listener():
                 submission = submission.lower()
                 vs = analyzer.polarity_scores(submission)["compound"]
                 time = datetime.datetime.now()
-                values = (submission, vs, time)
+                values = (text, submission, vs, time)
 
                 config = configparser.ConfigParser()
                 config.read('postgres.ini')
@@ -47,7 +46,7 @@ class listener():
                                                         user="postgres", password=config['DEFAULT']['POSTGRES_PASSWORD'])
                 cur = conn.cursor()
                 cur.execute(
-                    'INSERT INTO threads (thread,sentiment,time) VALUES (%s,%s,%s)', values)
+                    'INSERT INTO threads (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', values)
                 conn.commit()
 
                 for comment in subreddit.stream.comments(skip_existing=True):
@@ -58,20 +57,20 @@ class listener():
                     thread = thread.lower()
                     vs = analyzer.polarity_scores(submission.body)["compound"]
                     time = datetime.datetime.now()
-                    values = (thread, vs, time)
+                    values = (text, thread, vs, time)
 
                     cur.execute(
-                        'INSERT INTO threads (thread,sentiment,time) VALUES (%s,%s,%s)', values)
+                        'INSERT INTO threads (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', values)
                     conn.commit()
 
                     for reply in submission.replies:
                         reply = reply.lower()
                         vs = analyzer.polarity_scores(reply)["compound"]
                         time = datetime.datetime.now()
-                        rep_values = (reply, vs, time)
+                        rep_values = (text, reply, vs, time)
 
                         cur.execute(
-                            'INSERT INTO threads (thread,sentiment,time) VALUES (%s,%s,%s)', rep_values)
+                            'INSERT INTO threads (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', rep_values)
                         conn.commit()
 
             except praw.exceptions.PRAWException as e:
@@ -109,14 +108,26 @@ conn = psycopg2.connect(host=config['DEFAULT']['POSTGRES_HOST'], database="reddi
                                         user="postgres", password=config['DEFAULT']['POSTGRES_PASSWORD'])
 cur = conn.cursor()
 cur.execute('''CREATE TABLE IF NOT EXISTS threads
-             (id SERIAL PRIMARY KEY,thread text, sentiment real, time timestamp)''')
+             (id SERIAL PRIMARY KEY,subreddit text, thread text, sentiment real, time timestamp)''')
 conn.commit()
 
 
 while True:
     try:
         redditlistern = listener()
-        redditlistern.save_in_db()
+        # Create threads for each subreddit
+        t_askreddit = threading.Thread(target=redditlistern.save_in_db, args=('AskReddit',))
+        t_worldnews = threading.Thread(target=redditlistern.save_in_db, args=('worldnews',))
+        t_movies = threading.Thread(target=redditlistern.save_in_db, args=('movies',))
+        # Start the threads
+        t_askreddit.start()
+        t_worldnews.start()
+        t_movies.start()
+
+        # Wait for all threads to finish (optional, but recommended)
+        t_askreddit.join()
+        t_worldnews.join()
+        t_movies.join()
         redditlistern.del_from_db()
     except Exception as e:
         print(str(e))

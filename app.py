@@ -4,11 +4,15 @@ import plotly.graph_objs as go
 import pandas as pd
 import psycopg2
 import configparser
+import tensorflow as tf
+import numpy as np
+from tensorflow.keras.models import load_model
 
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, './custom-styles.css'])
 app.title = 'Real-Time Reddit Monitor'
 
+#Method to create a table for twitter
 def generate_twitter_table(data, max_rows=10):
     return html.Table(
         className="table table-responsive table-striped table-bordered table-hover",
@@ -41,9 +45,10 @@ sample_twitter_data = {
     'Malicious': [True, False, True]
 }
 twitter_df = pd.DataFrame(sample_twitter_data)
-
+#Layout of the actual application
 app.layout = html.Div(
     [
+        #Switching between reddit and twitter logic
         reddit_button := html.Button(
             "Go to Reddit Analysis Page",
             style={"margin": "auto", "width": "fit-content", "display": "none"},
@@ -54,6 +59,7 @@ app.layout = html.Div(
             style={"margin": "auto", "width": "fit-content"},
             id="twitter_button"
         ),
+        #display of twitter dashboard
         page := html.Div(
             [
                 # Twitter dashboard display
@@ -100,7 +106,7 @@ app.layout = html.Div(
                                     className="card text-white text-center mb-4",
                                     style={"padding": "20px", "background-color": "#FF4500", "border-radius": "10px"}
                                 ),
-
+                                #Div for searching a term
                                 html.Div(
                                     [
                                         html.Div(
@@ -120,6 +126,7 @@ app.layout = html.Div(
                                             className="input-container",
                                             style={"display": "inline-block", "padding-right": "10px"}
                                         ),
+                                        #Choosing the subreddit
                                         html.Div(
                                             [
                                                 html.Span(
@@ -132,7 +139,7 @@ app.layout = html.Div(
                                                         {"label": "All", "value": "all"},
                                                         {"label": "World News", "value": "worldnews"},
                                                         {"label": "AskReddit", "value": "AskReddit"},
-                                                        {"label": "Movies", "value": "Movies"},
+                                                        {"label": "Movies", "value": "movies"},
                                                     ],
                                                     className="input-field",
                                                     style={"width": "100%"},
@@ -150,7 +157,7 @@ app.layout = html.Div(
                                 dcc.Interval(id="graph-update", interval=10 * 1000, n_intervals=0),
                                 dcc.Interval(id="pie-graph-update", interval=10 * 1000, n_intervals=0),
                                 dcc.Interval(id="recent-table-update", interval=20 * 1000, n_intervals=0),
-                                
+                                #All the graphs
                                 html.Div(
                                     [
                                         html.Div(
@@ -273,14 +280,15 @@ Reddit Callbacks
 '''
 @app.callback(
     Output('live-graph', 'figure'),
-    [Input('graph-update', 'n_intervals'), Input('searchinput', 'value')])
-def update_graph(n_intervals, searchterm):
+    [Input('graph-update', 'n_intervals'), Input('searchinput', 'value'),Input('subreddit-dropdown', 'value'),])
+def update_graph(n_intervals, searchterm, subreddit):
 
     searchterm = searchterm.lower()
 
+
     conn.cursor()
-    df = pd.read_sql("SELECT * FROM threads WHERE thread LIKE %s ORDER BY time DESC LIMIT 50",
-                    conn, params=('%' + searchterm + '%',))
+    df = pd.read_sql("SELECT * FROM threads WHERE thread LIKE %s AND subreddit Like %s ORDER BY time DESC LIMIT 50",
+                    conn, params=('%' + searchterm + '%','%'+subreddit+'%'))
     df.sort_values('time', inplace=True)
     df['time'] = pd.to_datetime(df['time'])
     df.dropna(inplace=True)
@@ -315,14 +323,14 @@ def update_graph(n_intervals, searchterm):
 
 @app.callback(
     Output('long-live-graph', 'figure'),
-    [Input('graph-update', 'n_intervals'), Input('searchinput', 'value')])
-def update_long_graph(n_intervals, searchterm):
+    [Input('graph-update', 'n_intervals'), Input('searchinput', 'value'),Input('subreddit-dropdown', 'value'),])
+def update_long_graph(n_intervals, searchterm, subreddit):
 
     searchterm = searchterm.lower()
 
     conn.cursor()
-    df = pd.read_sql("SELECT * FROM threads WHERE thread LIKE %s ORDER BY time DESC",
-                    conn, params=('%' + searchterm + '%',))
+    df = pd.read_sql("SELECT * FROM threads WHERE thread LIKE %s AND subreddit LIKE %s  ORDER BY time DESC",
+                    conn, params=('%' + searchterm + '%','%' + subreddit + '%'))
     df.sort_values('time', inplace=True)
     df['time'] = pd.to_datetime(df['time'])
     df['sentiment_smoothed'] = df['sentiment'].rolling(int(len(df)/20)).mean()
@@ -353,12 +361,13 @@ def update_long_graph(n_intervals, searchterm):
 
 @app.callback(
     Output('pie-live-graph', 'figure'),
-    [Input('pie-graph-update', 'n_intervals'), Input(component_id='searchinput', component_property='value')])
-def update_pie_graph(n_intervals, searchterm):
+    [Input('pie-graph-update', 'n_intervals'), Input('searchinput', 'value'),Input('subreddit-dropdown', 'value'),])
+def update_pie_graph(n_intervals, searchterm, subreddit):
+    searchterm = searchterm.lower()
 
     conn.cursor()
-    df = pd.read_sql("SELECT * FROM threads WHERE thread LIKE %s",
-                    conn, params=('%' + searchterm + '%',))
+    df = pd.read_sql("SELECT * FROM threads WHERE thread LIKE %s AND subreddit LIKE %s",
+                    conn, params=('%' + searchterm + '%','%' + subreddit + '%'))
 
     labels = ['Positive', 'Neutral', 'Negative']
     values = [
@@ -386,21 +395,22 @@ def update_pie_graph(n_intervals, searchterm):
 
 
 @app.callback(Output('recent-threads-table', 'children'),
-            [Input(component_id='searchinput', component_property='value'), Input('recent-table-update', 'n_intervals')])
-def update_recent_threads(searchterm, n_intervals):
+            [Input(component_id='searchinput', component_property='value'), Input('recent-table-update', 'n_intervals'),Input('subreddit-dropdown', 'value'), ])
+def update_recent_threads(searchterm, n_intervals, subreddit):
+    searchterm = searchterm.lower()
     if searchterm:
-        df = pd.read_sql("SELECT * FROM threads WHERE thread LIKE %s ORDER BY time DESC LIMIT 10",
-                        conn, params=('%' + searchterm + '%',))
+        df = pd.read_sql("SELECT * FROM threads WHERE thread LIKE %s AND subreddit LIKE %s ORDER BY time DESC LIMIT 10",
+                        conn, params=('%' + searchterm + '%', '%' + subreddit + '%'))
     else:
         df = pd.read_sql(
-            "SELECT * FROM threads ORDER BY time DESC LIMIT 10", conn)
+            "SELECT * FROM threads WHERE subreddit LIKE %s ORDER BY time DESC LIMIT 10", conn, params=('%' + subreddit + '%',))
 
     #df['Time'] = pd.to_datetime(df['time'])
     df['Time'] = pd.to_datetime(df['time']).dt.strftime('%Y/%m/%d %H:%M:%S')
     df.dropna(inplace=True)
 
     df['Live Feed'] = df['thread'].str[:]
-    df = df[['Time', 'Live Feed', 'sentiment']]
+    df = df[['Time', 'Live Feed', 'sentiment', 'subreddit']]
 
     return generate_table(df, max_rows=10)
 
