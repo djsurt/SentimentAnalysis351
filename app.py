@@ -175,7 +175,11 @@ app.layout = html.Div(
                                         html.Div(
                                             id="recent-threads-table",
                                             className="col-12 col-md-6 mb-4 graph"
-                                        )
+                                        ),
+                                        html.Div(
+                                            id="recent-malicious-table",
+                                            className="col-12 col-md-6 mb-4 graph"
+                                        ),
                                     ],
                                     className="row"
                                 ),
@@ -406,6 +410,19 @@ def update_recent_threads(searchterm, n_intervals, subreddit):
             "SELECT * FROM threads WHERE subreddit LIKE %s ORDER BY time DESC LIMIT 10", conn, params=('%' + subreddit + '%',))
 
     #df['Time'] = pd.to_datetime(df['time'])
+    df['Time'] = pd.to_datetime(df['time']).dt.strftime('%Y/%m/%d %H:%M:%S')
+    df.dropna(inplace=True)
+
+    df['Live Feed'] = df['thread'].str[:]
+    df = df[['Time', 'Live Feed', 'sentiment', 'subreddit']]
+
+    return generate_table(df, max_rows=10)
+
+@app.callback(Output('recent-malicious-table', 'children'),
+            [Input('subreddit-dropdown', 'value'), Input('recent-table-update', 'n_intervals'), ])
+def update_recent_malicious(subreddit, n_intervals):
+    df = pd.read_sql(
+        "SELECT * FROM malicious_posts WHERE subreddit LIKE %s ORDER BY time DESC LIMIT 10", conn, params=('%' + subreddit + '%',))
     df['Time'] = pd.to_datetime(df['time']).dt.strftime('%Y/%m/%d %H:%M:%S')
     df.dropna(inplace=True)
 

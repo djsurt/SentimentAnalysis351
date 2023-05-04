@@ -28,6 +28,7 @@ class listener():
         subreddit = reddit.subreddit(text)
         return subreddit
 
+    #Need to modify this method so that it flags malicious posts and puts them into a separate database.
     def save_in_db(self, text):
         subreddit = self.subred(text=text)
         # subreddit = reddit.subreddit('AskReddit')
@@ -45,9 +46,14 @@ class listener():
                 conn = psycopg2.connect(host=config['DEFAULT']['POSTGRES_HOST'], database="reddit",
                                                         user="postgres", password=config['DEFAULT']['POSTGRES_PASSWORD'])
                 cur = conn.cursor()
-                cur.execute(
-                    'INSERT INTO threads (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', values)
-                conn.commit()
+                if 'fuck' in submission:
+                    cur.execute(
+                        'INSERT INTO malicious_posts (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', values)
+                    conn.commit()
+                else:
+                    cur.execute(
+                        'INSERT INTO threads (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', values)
+                    conn.commit()
 
                 for comment in subreddit.stream.comments(skip_existing=True):
 
@@ -58,21 +64,28 @@ class listener():
                     vs = analyzer.polarity_scores(submission.body)["compound"]
                     time = datetime.datetime.now()
                     values = (text, thread, vs, time)
-
-                    cur.execute(
-                        'INSERT INTO threads (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', values)
-                    conn.commit()
+                    if 'fuck' in thread:
+                        cur.execute(
+                            'INSERT INTO malicious_posts (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', values)
+                        conn.commit()
+                    else:
+                        cur.execute(
+                            'INSERT INTO threads (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', values)
+                        conn.commit()
 
                     for reply in submission.replies:
                         reply = reply.lower()
                         vs = analyzer.polarity_scores(reply)["compound"]
                         time = datetime.datetime.now()
                         rep_values = (text, reply, vs, time)
-
-                        cur.execute(
-                            'INSERT INTO threads (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', rep_values)
-                        conn.commit()
-
+                        if 'fuck' in reply:
+                            cur.execute(
+                                'INSERT INTO malicious_posts (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', rep_values)
+                            conn.commit()
+                        else:
+                            cur.execute(
+                                'INSERT INTO threads (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', rep_values)
+                            conn.commit()
             except praw.exceptions.PRAWException as e:
                 #print(e)
                 pass
@@ -110,6 +123,11 @@ cur = conn.cursor()
 cur.execute('''CREATE TABLE IF NOT EXISTS threads
              (id SERIAL PRIMARY KEY,subreddit text, thread text, sentiment real, time timestamp)''')
 conn.commit()
+
+cur.execute('''CREATE TABLE IF NOT EXISTS malicious_posts
+             (id SERIAL PRIMARY KEY, subreddit TEXT, thread TEXT, sentiment REAL, time TIMESTAMP)''')
+conn.commit()
+
 
 
 while True:
