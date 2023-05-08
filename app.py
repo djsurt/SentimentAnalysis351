@@ -235,21 +235,21 @@ app.layout = html.Div(
                                             dcc.Graph(id="live-graph", animate=False),
                                             className="col-12 col-md-6 mb-4 graph"
                                         ),
-                                        html.Div(
-                                            dcc.Graph(id="long-live-graph", animate=False),
-                                            className="col-12 col-md-6 mb-4 graph"
-                                        ),
+                                        # html.Div(
+                                        #     dcc.Graph(id="long-live-graph", animate=False),
+                                        #     className="col-12 col-md-6 mb-4 graph"
+                                        # ),
                                         html.Div(
                                             dcc.Graph(id="pie-live-graph", animate=False),
                                             className="col-12 col-md-6 mb-4 graph"
                                         ),
                                         html.Div(
                                             id="recent-threads-table",
-                                            className="col-12 col-md-6 mb-4 graph"
+                                            className="col-6 col-md-6 mb-4 graph"
                                         ),
                                         html.Div(
                                             id="recent-malicious-table",
-                                            className="col-12 col-md-6 mb-4 graph"
+                                            className="col-6 col-md-6 mb-4 graph"
                                         ),
                                     ],
                                     className="row"
@@ -273,7 +273,7 @@ app.layout = html.Div(
                                 )
                                 
                             ],
-                            style={"margin": "20px 10%", "padding": "20px"}
+                            style={"margin": "20px 0% !important", "padding": "20px"}
                         )
                     ],
                     id="reddit_content",
@@ -283,6 +283,7 @@ app.layout = html.Div(
             id="page"
         )
     ],
+    className='page-content'
 )
 
 '''
