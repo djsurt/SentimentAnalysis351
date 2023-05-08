@@ -6,8 +6,14 @@ import plotly.graph_objs as go
 import pandas as pd
 import psycopg2
 import configparser
-
+from transformers import pipeline
 app = dash.Dash(__name__)
+
+def isPositive(text):
+    sentiment_analysis = pipeline("sentiment-analysis",model="siebert/sentiment-roberta-large-english")
+    sentiment = sentiment_analysis(text)
+    print(sentiment)
+    return sentiment == 'POSITIVE'
 
 def twitterUI(app):
 
