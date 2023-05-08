@@ -124,6 +124,14 @@ cur.execute('''CREATE TABLE IF NOT EXISTS threads
              (id SERIAL PRIMARY KEY,subreddit text, thread text, sentiment real, time timestamp)''')
 conn.commit()
 
+cur.execute('''CREATE TABLE IF NOT EXISTS twitter_threads
+             (id SERIAL PRIMARY KEY, thread text, sentiment real)''')
+conn.commit()
+
+cur.execute('''CREATE TABLE IF NOT EXISTS malicious_twitter_threads
+             (id SERIAL PRIMARY KEY, thread text, sentiment real)''')
+conn.commit()
+
 cur.execute('''CREATE TABLE IF NOT EXISTS malicious_posts
              (id SERIAL PRIMARY KEY, subreddit TEXT, thread TEXT, sentiment REAL, time TIMESTAMP)''')
 conn.commit()

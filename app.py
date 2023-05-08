@@ -1,12 +1,14 @@
-from dash import Dash, html, Input, Output, dcc, ctx
+from dash import Dash, html, Input, Output, dcc, ctx, State
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
 import pandas as pd
 import psycopg2
 import configparser
 import tensorflow as tf
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import numpy as np
-from tensorflow.keras.models import load_model
+import base64
+import io
 
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, './custom-styles.css'])
@@ -38,13 +40,6 @@ def generate_twitter_table(data, max_rows=10):
         style={"height": "400px", 'overflowY': 'auto'}
     )
 
-# Replace the sample data with your actual data
-sample_twitter_data = {
-    'Time': ['2023-04-09 14:30:00', '2023-04-09 14:20:00', '2023-04-09 14:10:00'],
-    'Tweet': ['This is a malicious tweet.', 'This is a normal tweet.', 'Another malicious tweet found.'],
-    'Malicious': [True, False, True]
-}
-twitter_df = pd.DataFrame(sample_twitter_data)
 #Layout of the actual application
 app.layout = html.Div(
     [
@@ -73,15 +68,84 @@ app.layout = html.Div(
                                     style={"padding": "20px", "background-color": "#1DA1F2", "border-radius": "10px"}
                                 ),
 
+                                html.Div([
+                                    dcc.Upload(
+                                        id='upload-file',
+                                        children=html.Div([
+                                            'Drag and Drop or ',
+                                            html.A('Select File')
+                                        ]),
+                                        style={
+                                            'width':'100%',
+                                            'height':'60px',
+                                            'lineHeight': '60px',
+                                            'borderWidth': '1px',
+                                            'borderStyle': 'dashed',
+                                            'borderRadius': '5px',
+                                            'textAlign': 'center',
+                                            'margin': '10px'
+                                        },
+                                        multiple=True
+                                    ),
+                                ]),
+
+                                html.Div(
+                                    html.Button('Upload', id='upload-button', n_clicks=0),
+                                    style={
+                                        'width': '100%',
+                                        'display': 'flex',
+                                        'justifyContent': 'center',
+                                        'alignItems': 'center',
+                                        'marginBottom': '10px'
+                                    }
+                                ),
+
+
+                                html.Div(
+                                    [
+                                    html.Span(
+                                         "Search the term:",
+                                            className="input-label"
+                                        ),
+                                        dcc.Input(
+                                            id="searchinput-1",
+                                            type="text",
+                                            placeholder="Search here",
+                                            className="input-field",
+                                            value=" "
+                                        ),
+                                    ],
+                                    className="input-container",
+                                    style={"display": "inline-block", "padding-right": "10px"}
+                                ),
+                                
+
                                 html.Div(
                                     [
                                         html.Div(
-                                            generate_twitter_table(twitter_df, max_rows=10),
+                                            html.Div(id='output-file-content'),
                                             className="col-12 mb-4 table-container"
                                         )
                                     ],
                                     className="row"
                                 ),
+                            
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            html.Div(id='search-output'),
+                                            className="col-12 mb-4 table-container"
+                                        )
+                                    ],
+                                    className="row"
+                                ),
+
+                                
+
+                                html.Div([
+                                    html.Button('Clean Database', id='my-button'),
+                                    html.Div(id='db-output'),
+                                ]),
                             ],
                             style={"margin": "20px 10%", "padding": "20px"}
                         )
@@ -95,6 +159,7 @@ app.layout = html.Div(
                     [
                         html.Div(
                             [
+                                #The nav bar
                                 html.H1(
                                     [
                                         html.Img(
@@ -106,7 +171,7 @@ app.layout = html.Div(
                                     className="card text-white text-center mb-4",
                                     style={"padding": "20px", "background-color": "#FF4500", "border-radius": "10px"}
                                 ),
-                                #Div for searching a term
+                                #Bar for seraching term and subreddit and stuff.
                                 html.Div(
                                     [
                                         html.Div(
@@ -416,7 +481,7 @@ def update_recent_threads(searchterm, n_intervals, subreddit):
     df['Live Feed'] = df['thread'].str[:]
     df = df[['Time', 'Live Feed', 'sentiment', 'subreddit']]
 
-    return generate_table(df, max_rows=10)
+    return generate_table(df,"Latest 10 posts" ,max_rows=10)
 
 @app.callback(Output('recent-malicious-table', 'children'),
             [Input('subreddit-dropdown', 'value'), Input('recent-table-update', 'n_intervals'), ])
@@ -429,14 +494,14 @@ def update_recent_malicious(subreddit, n_intervals):
     df['Live Feed'] = df['thread'].str[:]
     df = df[['Time', 'Live Feed', 'sentiment', 'subreddit']]
 
-    return generate_table(df, max_rows=10)
+    return generate_table(df, "Malicious Posts" ,max_rows=10)
 
 # -----------------------------------------------------------------------------------------
 
-def generate_table(df, max_rows=10):
+def generate_table(df,table_title, max_rows=10):
     return html.Span(
         children=[
-            html.H2(children=["Latest 10 feeds"], style={'textAlign': 'center'}), 
+            html.H2(children=[table_title], style={'textAlign': 'center'}), 
             html.Table(
                 className="table table-responsive table-striped table-bordered table-hover",
                 children=[
@@ -463,6 +528,75 @@ def generate_table(df, max_rows=10):
         ]
     )
 
+#------------Uploading file stuff
+@app.callback(Output('output-file-content', 'children'),
+              Input('upload-button', 'n_clicks'),
+              State('upload-file', 'contents'),
+              State('upload-file', 'filename'),)
+def display_file_content(n_clicks, contents_list, filenames_list):
+    if n_clicks > 0:
+        if contents_list is not None:
+            children = []
+            for contents, filename in zip(contents_list, filenames_list):
+                content_type, content_string = contents.split(',')
+                decoded = base64.b64decode(content_string)
+                file_data = io.StringIO(decoded.decode('utf-8'))
+
+                df = pd.read_csv(file_data)
+
+                # Method to insert into a postgres database
+                insert_data_to_db(df)
+                children.append(html.P(f"Data from file '{filename}' has been inserted into the database."))
+
+            return children
+        return "No files uploaded."
+    return "Click the 'Upload' button to process files."
+
+
+
+@app.callback(Output('search-output', 'children'),
+              Input('searchinput-1', 'value'))
+def search_term(searchterm):
+    if searchterm is not None:
+        df = pd.read_sql(
+            "SELECT * FROM twitter_threads WHERE thread LIKE %s LIMIT 10", conn, params=('%' + searchterm + '%',))
+        return generate_table(df, "Twitter Post Sentiment", max_rows=10)
+    return "No search term entered."
+
+def insert_data_to_db(df):
+    try:
+        cur = conn.cursor()
+        analyzer = SentimentIntensityAnalyzer()
+        for index, row in df.iterrows():
+            t = row['text'].lower()
+            vs = analyzer.polarity_scores(t)["compound"]
+            values = (t, vs)
+            cur.execute("""
+                INSERT INTO twitter_threads (thread, sentiment)
+                VALUES (%s, %s)
+            """, (t, vs))
+        conn.commit()
+        df = pd.read_sql("SELECT * FROM twitter_threads", con=conn)
+        print(df)
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+
+@app.callback(
+    Output('db-output', 'children'),
+    [Input('my-button', 'n_clicks')]
+)
+def update_output(n_clicks):
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            DELETE FROM twitter_threads
+        """)
+        conn.commit()
+        df = pd.read_sql("SELECT * FROM twitter_threads", con=conn)
+        print(df)
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    return ''
 
 if __name__ == '__main__':
     app.run_server(debug=False)
