@@ -1,5 +1,6 @@
 from dash import Dash, html, Input, Output, dcc, ctx, State
 import dash_bootstrap_components as dbc
+import dash_table
 import plotly.graph_objs as go
 import pandas as pd
 import psycopg2
@@ -22,15 +23,16 @@ def generate_twitter_table(data, max_rows=10):
             html.Thead(
                 html.Tr(
                     children=[
-                        html.Th(col.title()) for col in data.columns.values
-                    ]
+                        html.Th(col.title(), style={'padding': '8px'}) for col in data.columns.values
+                    ],
+                    style={'backgroundColor': '#f5f5f5', 'fontWeight': 'bold'}
                 )
             ),
             html.Tbody(
                 [
                     html.Tr(
                         children=[
-                            html.Td(data.iloc[i][col]) for col in data.columns.values
+                            html.Td(data.iloc[i][col], style={'padding': '8px'}) for col in data.columns.values
                         ]
                     )
                     for i in range(min(len(data), max_rows))
@@ -134,7 +136,11 @@ app.layout = html.Div(
                                     [
                                         html.Div(
                                             html.Div(id='search-output'),
-                                            className="col-12 mb-4 table-container"
+                                            className="col-6 mb-4 table-container"
+                                        ),
+                                        html.Div(
+                                            html.Div(id='search-output-malicious'),
+                                            className="col-6 mb-4 table-container"
                                         )
                                     ],
                                     className="row"
@@ -497,36 +503,58 @@ def update_recent_malicious(subreddit, n_intervals):
     return generate_table(df, "Malicious Posts" ,max_rows=10)
 
 # -----------------------------------------------------------------------------------------
+import dash_html_components as html
+import dash_core_components as dcc
+import dash_table
 
-def generate_table(df,table_title, max_rows=10):
-    return html.Span(
+def generate_table(df, table_title, max_rows=10):
+    return html.Div(
         children=[
-            html.H2(children=[table_title], style={'textAlign': 'center'}), 
-            html.Table(
-                className="table table-responsive table-striped table-bordered table-hover",
-                children=[
-                    html.Thead(
-                        html.Tr(
-                            children=[
-                                html.Th(col.title()) for col in df.columns.values
-                            ]
-                        )
-                    ),
-                    html.Tbody(
-                        [
-                            html.Tr(
-                                children=[
-                                    html.Td(data) for data in d
-                                ]
-                            )
-                            for d in df.values.tolist()
-                        ]
-                    )
-                ], 
-                style={"height": "400px", 'overflowY': 'auto'}
+            html.H2(children=[table_title], style={'textAlign': 'center', 'fontFamily': 'Roboto, sans-serif'}),
+            dash_table.DataTable(
+                id='table',
+                columns=[{'name': i, 'id': i} for i in df.columns],
+                data=df.to_dict('records'),
+                page_size=max_rows,
+                style_table={
+                    'maxHeight': '400px',
+                    'overflowY': 'auto',
+                    'width': '100%',
+                    'minWidth': '100%',
+                },
+                style_cell={
+                    'minWidth': '100px',
+                    'width': '150px',
+                    'maxWidth': '180px',
+                    'whiteSpace': 'normal',
+                    'padding': '8px',
+                    'fontFamily': 'Roboto, sans-serif',
+                },
+                style_header={
+                    'backgroundColor': '#f5f5f5',
+                    'fontWeight': 'bold',
+                    'textAlign': 'center',
+                    'fontFamily': 'Roboto, sans-serif',
+                },
+                style_data_conditional=[
+                    {
+                        'if': {'row_index': 'odd'},
+                        'backgroundColor': 'rgb(248, 248, 248)'
+                    }
+                ],
+                css=[
+                    {
+                        'selector': 'table',
+                        'rule': 'table-layout: fixed;'
+                    }
+                ],
             )
         ]
     )
+
+
+
+
 
 #------------Uploading file stuff
 @app.callback(Output('output-file-content', 'children'),
@@ -563,6 +591,15 @@ def search_term(searchterm):
         return generate_table(df, "Twitter Post Sentiment", max_rows=10)
     return "No search term entered."
 
+@app.callback(Output('search-output-malicious', 'children'),
+              Input('searchinput-1', 'value'))
+def search_term(searchterm):
+    if searchterm is not None:
+        df = pd.read_sql(
+            "SELECT * FROM malicious_twitter_threads WHERE thread LIKE %s LIMIT 10", conn, params=('%' + searchterm + '%',))
+        return generate_table(df, "Twitter Post Malicious", max_rows=10)
+    return "No search term entered."
+
 def insert_data_to_db(df):
     try:
         cur = conn.cursor()
@@ -571,10 +608,16 @@ def insert_data_to_db(df):
             t = row['text'].lower()
             vs = analyzer.polarity_scores(t)["compound"]
             values = (t, vs)
-            cur.execute("""
-                INSERT INTO twitter_threads (thread, sentiment)
-                VALUES (%s, %s)
-            """, (t, vs))
+            if 'fuck' in t:
+                cur.execute("""
+                    INSERT INTO malicious_twitter_threads (thread, sentiment)
+                    VALUES (%s, %s)
+                """, (t, vs))
+            else:
+                cur.execute("""
+                    INSERT INTO twitter_threads (thread, sentiment)
+                    VALUES (%s, %s)
+                """, (t, vs))
         conn.commit()
         df = pd.read_sql("SELECT * FROM twitter_threads", con=conn)
         print(df)
@@ -590,6 +633,10 @@ def update_output(n_clicks):
         cur = conn.cursor()
         cur.execute("""
             DELETE FROM twitter_threads
+        """)
+        conn.commit()
+        cur.execute("""
+            DELETE FROM malicious_twitter_threads
         """)
         conn.commit()
         df = pd.read_sql("SELECT * FROM twitter_threads", con=conn)
