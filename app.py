@@ -14,7 +14,6 @@ import io
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, './custom-styles.css'])
 app.title = 'Real-Time Reddit Monitor'
-
 #Method to create a table for twitter
 def generate_twitter_table(data, max_rows=10):
     return html.Table(
@@ -42,6 +41,8 @@ def generate_twitter_table(data, max_rows=10):
         style={"height": "400px", 'overflowY': 'auto'}
     )
 
+def classify(text):
+    return sentiment_analysis(text)
 #Layout of the actual application
 app.layout = html.Div(
     [
@@ -332,6 +333,14 @@ def toggleTwitter(click, n_clicks):
         return {"display": "none"}
     else:
         return {"display": "block"}
+
+#@app.route('/classify', methods=['POST'])
+#def classify():
+#    try:
+#        json_  = request.json
+#        return jsonify({'class': sentiment_analysis(json_['text'])})
+#    except:
+#        return jsonify({'error': traceback.format_exc()})
 
 server = app.server
 
