@@ -13,7 +13,7 @@ def isPositive(text):
     sentiment_analysis = pipeline("sentiment-analysis",model="siebert/sentiment-roberta-large-english")
     sentiment = sentiment_analysis(text)
     print(sentiment)
-    return sentiment == 'POSITIVE'
+    return sentiment[0]['label'] == 'POSITIVE'
 
 def twitterUI(app):
 
