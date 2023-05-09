@@ -20,7 +20,7 @@ reddit = praw.Reddit(client_id='5hdtNTA2qGBAceBPFhDm6g',
                      user_agent='testscript by /u/Born-Finger-2677', username='Born-Finger-2677')
 
 def get_sentiment(text):
-    if len(text.split()) > 512:
+    if len(text.split()) >= 512:
         text = " ".join(text.split(' ')[:512])
     sentiment = sentiment_analysis(text)
     sign = -1 if sentiment[0]['label'] == 'NEGATIVE' else 1
@@ -42,8 +42,6 @@ class listener():
         for submis in subreddit.stream.submissions():
             try:
                 submission = submis.selftext
-                if submission == None or len(submission) == 0:
-                    continue
                 submission = submission.lower()
                 vs = (analyzer.polarity_scores(submission)["compound"] + get_sentiment(submission)) / 2
                 time = datetime.datetime.now()
@@ -59,7 +57,9 @@ class listener():
                 #sentiment = sentiment_analysis(submission)
                 #print(sentiment)
                 #print(sentiment[0]['label'])
-                if vs < NEGATIVE_THRESHOLD:
+                if submission == None or submission == " " or len(submission) == 0:
+                    pass
+                elif vs < NEGATIVE_THRESHOLD:
                     cur.execute(
                         'INSERT INTO malicious_posts (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', values)
                     conn.commit()
@@ -72,14 +72,14 @@ class listener():
 
                     parent_id = str(comment.parent())
                     submission = reddit.comment(parent_id)
-                    if submission == None or len(submission.body) == 0:
-                        continue
                     thread = submission.body
                     thread = thread.lower()
                     vs = (analyzer.polarity_scores(submission.body)["compound"] + get_sentiment(submission.body)) / 2
                     time = datetime.datetime.now()
                     values = (text, thread, vs, time)
-                    if vs < NEGATIVE_THRESHOLD:
+                    if submission == None or len(submission.body) == 0 or submission == ' ':
+                        pass
+                    elif vs < NEGATIVE_THRESHOLD:
                         cur.execute(
                             'INSERT INTO malicious_posts (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', values)
                         conn.commit()
@@ -90,12 +90,12 @@ class listener():
 
                     for reply in submission.replies:
                         reply = reply.lower()
-                        if reply  == None or len(reply) == 0:
-                            continue
                         vs = (analyzer.polarity_scores(reply)["compound"] + get_sentiment(reply)) / 2
                         time = datetime.datetime.now()
                         rep_values = (text, reply, vs, time)
-                        if vs < NEGATIVE_THRESHOLD:
+                        if reply  == None or len(reply) == 0 or reply == ' ':
+                            pass
+                        elif vs < NEGATIVE_THRESHOLD:
                             cur.execute(
                                 'INSERT INTO malicious_posts (subreddit, thread,sentiment,time) VALUES (%s, %s,%s,%s)', rep_values)
                             conn.commit()
@@ -165,7 +165,7 @@ while True:
         # Start the threads
         t_askreddit.start()
         t_worldnews.start()
-        t_movies.start()
+        # t_movies.start()
 
         # Wait for all threads to finish (optional, but recommended)
         t_askreddit.join()
