@@ -1,6 +1,5 @@
-from dash import Dash, html, Input, Output, dcc, ctx, State
+from dash import Dash, html, Input, Output, dcc, ctx, State, dash_table
 import dash_bootstrap_components as dbc
-import dash_table
 import plotly.graph_objs as go
 import pandas as pd
 import psycopg2
@@ -513,9 +512,6 @@ def update_recent_malicious(subreddit, n_intervals):
     return generate_table(df, "Malicious Posts" ,max_rows=10)
 
 # -----------------------------------------------------------------------------------------
-import dash_html_components as html
-import dash_core_components as dcc
-import dash_table
 
 def generate_table(df, table_title, max_rows=10):
     return html.Div(
