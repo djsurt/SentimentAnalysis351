@@ -132,3 +132,7 @@ dmypy.json
 
 # Postgres config file
 postgres.ini
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
